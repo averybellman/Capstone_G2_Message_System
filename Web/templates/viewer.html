@@ -1,0 +1,23 @@
+<h2>Stored Messages</h2>
+
+<a href="/?sort=ReceivedDateTime">Sort by Time</a> |
+<a href="/?sort=MessageId">Sort by ID</a> |
+<a href="/?duplicate=true">Show Duplicates</a>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>MessageId</th>
+<th>Content</th>
+<th>Duplicate</th>
+</tr>
+
+{% for m in messages %}
+<tr {% if m.IsDuplicate %} style="background-color:#ffcccc;" {% endif %}>
+<td>{{ m.Id }}</td>
+<td>{{ m.MessageId }}</td>
+<td>{{ m.MessageContent }}</td>
+<td>{{ m.IsDuplicate }}</td>
+</tr>
+{% endfor %}
+</table>
