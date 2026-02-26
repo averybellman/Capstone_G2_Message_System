@@ -1,23 +1,11 @@
-cloud-messaging-project/
-│
-├── backend/
-│   └── app.py          (Producer + Consumer API)
-│
-├── frontend/
-│   ├── producer.html
-│   └── viewer.html
-│
-└── database/
-    └── messages.db
-
-    from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 import sqlite3
 import uuid
 from datetime import datetime
 
 app = Flask(__name__)
 
-DB = "messages.db"
+DB = "../database/messages.db"
 
 
 # -----------------------------
@@ -40,6 +28,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 init_db()
 
 
@@ -55,8 +44,6 @@ def publish_message():
     message_id = str(uuid.uuid4())
     timestamp = datetime.utcnow().isoformat()
 
-    # 🚨 Normally this publishes to Pub/Sub
-    # For now we simulate consumer processing
     process_message(message_id, message_text, timestamp)
 
     return jsonify({"status": "Message Published"})
@@ -70,14 +57,13 @@ def process_message(message_id, message_text, timestamp):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
-    # Duplicate Detection BEFORE INSERT
+    # Duplicate check
     c.execute(
         "SELECT * FROM messages WHERE messageId=?",
         (message_id,)
     )
 
     existing = c.fetchone()
-
     is_duplicate = 1 if existing else 0
 
     c.execute("""
@@ -98,12 +84,16 @@ def get_messages():
     conn = sqlite3.connect(DB)
     c = conn.cursor()
 
-    c.execute("SELECT messageId,messageText,timestamp,isDuplicate FROM messages")
-    rows = c.fetchall()
+    c.execute("""
+        SELECT messageId,messageText,timestamp,isDuplicate
+        FROM messages
+    """)
 
+    rows = c.fetchall()
     conn.close()
 
     result = []
+
     for r in rows:
         result.append({
             "messageId": r[0],
@@ -117,4 +107,3 @@ def get_messages():
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
