@@ -1,54 +1,124 @@
-'''
-This is a basic web page running with Flask.
-'''
+"""Flask demo shell for the capstone cloud messaging project.
 
-from flask import Flask, render_template, request
-#This is the Flask object, we are creating an instance of the Flask class and storing it in the variable app
-#__name__ is a special variable in Python that is the name of the module, which is this file's name without the .py extension
-app=Flask(__name__)
+This version is intentionally local-only for Milestone 3:
+- Sender UI writes payloads to a local outbox file (simulating a producer)
+- Consumer is a separate script that reads the outbox and writes to SQLite
+- Viewer UI reads from SQLite and supports sorting/filtering/highlighting duplicates
+"""
 
-#This is a decorator, it is a function that takes a function as a parameter!
-#A decorator is a function that wraps another function
-#This decorator is saying that when someone goes to the URL /greet, run the greet function
-@app.route('/greet', methods=['POST'])
-def greet():
-    inputName = request.form['myName']
-    ip = request.remote_addr
-    #write data to file or to DB
-    inputName = inputName.upper()+" hi!  Visiting from " + str(ip)
-    return render_template("home.html",myName=inputName)
+from __future__ import annotations
 
-@app.route('/')
-def home():  
-    return render_template("home.html",myName="Type your name in the box and click submit!")
+import sys
+from pathlib import Path
 
-@app.route('/about/')
-def about():
-    return render_template("about.html")
+from flask import Flask, flash, redirect, render_template, request, session, url_for
 
-@app.route("/avery")
-def test():
-    return render_template("bellman.html",myName="Please type your name in the box and click submit!")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from common import storage
+
+app = Flask(__name__)
+app.secret_key = "milestone-3-demo-secret"
+storage.init_db()
+
+
+@app.context_processor
+def inject_globals():
+    return {
+        "nav_summary": storage.get_summary(),
+        "sort_options": storage.SORT_OPTIONS,
+    }
+
+
+@app.route("/", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        display_name = (request.form.get("display_name") or "").strip()
+        if not display_name:
+            flash("Enter a display name to continue (demo login only).", "error")
+        else:
+            session["display_name"] = display_name
+            flash(f"Logged in as {display_name}.", "success")
+            return redirect(url_for("sender"))
+
+    return render_template("home.html")
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    flash("Logged out.", "success")
+    return redirect(url_for("login"))
+
+
+@app.route("/sender", methods=["GET", "POST"])
+def sender():
+    last_envelope = None
+    last_payload = None
+
+    if request.method == "POST":
+        content = request.form.get("message_content") or ""
+        forced_message_id = (request.form.get("message_id") or "").strip() or None
+        user_name = session.get("display_name") or "Guest"
+
+        try:
+            payload = storage.create_payload(
+                content=content,
+                message_id=forced_message_id,
+                producer_name="web-sender-ui",
+                user_name=user_name,
+            )
+            envelope = storage.append_outbox_message(payload, source="web-sender")
+        except ValueError as exc:
+            flash(str(exc), "error")
+        else:
+            last_payload = payload
+            last_envelope = envelope
+            flash(
+                "Message added to the local outbox. Run the consumer stub to move it into the database.",
+                "success",
+            )
+
+    return render_template(
+        "sender.html",
+        last_payload=last_payload,
+        last_envelope=last_envelope,
+    )
+
 
 @app.route("/viewer")
 def viewer():
+    sort_key = request.args.get("sort", "received_desc")
+    duplicate_filter = request.args.get("dup", "all")
+    search = (request.args.get("search") or "").strip()
+
+    messages = storage.fetch_messages(
+        sort_key=sort_key,
+        duplicate_filter=duplicate_filter,
+        search=search,
+    )
+
+    return render_template(
+        "viewer.html",
+        messages=messages,
+        current_sort=sort_key,
+        current_dup=duplicate_filter,
+        current_search=search,
+    )
 
 
-    mymessages = [
-    {
-    "Id": 1,
-    "MessageId": "ABC123",
-    "MessageContent": "Hello world",
-    "IsDuplicate": False
-    },
-    {
-    "Id": 2,
-    "MessageId": "ABC124",
-    "MessageContent": "Duplicate message",
-    "IsDuplicate": True
-    }
-    ]
-    return render_template("viewer.html",messages=mymessages)
+@app.route("/receiver")
+def receiver_alias():
+    return redirect(url_for("viewer"))
 
-if __name__=="__main__":
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
+if __name__ == "__main__":
     app.run(debug=True)

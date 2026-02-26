@@ -1,24 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-      <title>Python Flask Demo</title>
-      <link rel="stylesheet" href="{{url_for('static',filename='css/main.css')}}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Messaging Provider Demo Shell</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   </head>
   <body>
-    <header>
-      <div class="container">
-        <h1 class="logo">Welcome to the Python Flask Demo</h1>
-        <strong><nav>
+    <header class="site-header">
+      <div class="container header-row">
+        <div>
+          <p class="eyebrow">IS Capstone Project 1</p>
+          <h1 class="brand">Cloud Messaging Provider (Milestone 3 Shell)</h1>
+        </div>
+        <nav>
           <ul class="menu">
-            <li><a href="{{ url_for('home') }}">Home</a></li>
-            <li><a href="{{ url_for('about') }}">About</a></li>
+            <li><a href="{{ url_for('login') }}">Login</a></li>
+            <li><a href="{{ url_for('sender') }}">Sender</a></li>
+            <li><a href="{{ url_for('viewer') }}">Receiver / Sorter</a></li>
+            <li><a href="{{ url_for('about') }}">About Project</a></li>
           </ul>
-        </nav></strong>
+        </nav>
       </div>
     </header>
-    <div class="container">
-        {%block content%}
-        {%endblock%}
-    </div>
+
+    <main class="container page">
+      <section class="status-bar">
+        <div>
+          <strong>User:</strong>
+          {{ session.get('display_name', 'Not logged in (demo mode)') }}
+        </div>
+        <div><strong>Outbox:</strong> {{ nav_summary.outbox_count }} queued</div>
+        <div><strong>DB:</strong> {{ nav_summary.db_total }} rows</div>
+        <div><strong>Duplicates:</strong> {{ nav_summary.db_duplicates }}</div>
+      </section>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <section class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </section>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
   </body>
 </html>

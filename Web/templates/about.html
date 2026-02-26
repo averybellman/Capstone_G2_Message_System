@@ -1,8 +1,39 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="about">
-    <h1>My about page. It works!!!</h1>
-    <p>This is a test website again</p>
-    <p>This was added later</p>
-</div>
+<section class="panel">
+  <h2>What This Project Is About</h2>
+  <p>
+    Project 1 is teaching your team how distributed messaging works using the publish-subscribe model.
+    In the final version, your sender (producer) will publish messages to Google Pub/Sub, and your consumer
+    will read them from a subscription and save them to a database.
+  </p>
+  <p>
+    The key concept your instructor wants to see is <strong>at-least-once delivery</strong>: a message may be delivered more than once,
+    so the consumer must detect duplicates <strong>before</strong> inserting rows into the database.
+  </p>
+</section>
+
+<section class="two-col">
+  <div class="panel muted-panel">
+    <h3>Required Components (Final Project)</h3>
+    <ul>
+      <li>Google Cloud Project + Pub/Sub Topic + Subscription</li>
+      <li>Producer component + sender UI</li>
+      <li>Consumer component with duplicate detection before DB insert</li>
+      <li>Database storage</li>
+      <li>Separate viewer UI with sorting/filtering and duplicate highlighting</li>
+    </ul>
+  </div>
+
+  <div class="panel muted-panel">
+    <h3>What This Milestone 3 Shell Demonstrates</h3>
+    <ul>
+      <li>Separate Login, Sender, and Receiver/Sorter pages</li>
+      <li>Standalone producer script (local outbox simulation)</li>
+      <li>Standalone consumer script (reads outbox, writes SQLite)</li>
+      <li>Duplicate detection and highlighted duplicate rows</li>
+      <li>Sorting and filtering in the viewer</li>
+    </ul>
+  </div>
+</section>
 {% endblock %}

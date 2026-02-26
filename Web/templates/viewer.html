@@ -1,23 +1,81 @@
-<h2>Stored Messages</h2>
+{% extends "layout.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Receiver / Sorter UI (Database Viewer)</h2>
+  <p>
+    This screen reads messages from the SQLite database and highlights duplicate rows.
+    Duplicate detection is performed by the standalone consumer before the row is inserted.
+  </p>
 
-<a href="/?sort=ReceivedDateTime">Sort by Time</a> |
-<a href="/?sort=MessageId">Sort by ID</a> |
-<a href="/?duplicate=true">Show Duplicates</a>
+  <form method="get" class="filter-grid">
+    <div>
+      <label for="sort">Sort</label>
+      <select id="sort" name="sort">
+        {% for key, option in sort_options.items() %}
+          <option value="{{ key }}" {% if key == current_sort %}selected{% endif %}>{{ option[0] }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-<table border="1">
-<tr>
-<th>ID</th>
-<th>MessageId</th>
-<th>Content</th>
-<th>Duplicate</th>
-</tr>
+    <div>
+      <label for="dup">Duplicate Filter</label>
+      <select id="dup" name="dup">
+        <option value="all" {% if current_dup == 'all' %}selected{% endif %}>All</option>
+        <option value="only" {% if current_dup == 'only' %}selected{% endif %}>Duplicates Only</option>
+        <option value="exclude" {% if current_dup == 'exclude' %}selected{% endif %}>Non-Duplicates Only</option>
+      </select>
+    </div>
 
-{% for m in messages %}
-<tr {% if m.IsDuplicate %} style="background-color:#ffcccc;" {% endif %}>
-<td>{{ m.Id }}</td>
-<td>{{ m.MessageId }}</td>
-<td>{{ m.MessageContent }}</td>
-<td>{{ m.IsDuplicate }}</td>
-</tr>
-{% endfor %}
-</table>
+    <div>
+      <label for="search">Search</label>
+      <input id="search" name="search" type="text" value="{{ current_search }}" placeholder="Search by message ID or content">
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit">Apply</button>
+      <a class="button-link" href="{{ url_for('viewer') }}">Reset</a>
+    </div>
+  </form>
+</section>
+
+<section class="panel table-panel">
+  {% if messages %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>DB ID</th>
+            <th>Message ID</th>
+            <th>Content</th>
+            <th>Duplicate</th>
+            <th>Published</th>
+            <th>Received</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in messages %}
+            <tr class="{% if m.is_duplicate %}duplicate-row{% endif %}">
+              <td>{{ m.id }}</td>
+              <td><code>{{ m.message_id }}</code></td>
+              <td>{{ m.message_content }}</td>
+              <td>
+                {% if m.is_duplicate %}
+                  <span class="badge badge-duplicate">Duplicate</span>
+                {% else %}
+                  <span class="badge badge-ok">Original</span>
+                {% endif %}
+              </td>
+              <td>{{ m.published_at }}</td>
+              <td>{{ m.received_at }}</td>
+              <td>{{ m.source or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>No database rows yet. Queue a message on <a href="{{ url_for('sender') }}">Sender</a> and run the consumer stub.</p>
+  {% endif %}
+</section>
+{% endblock %}

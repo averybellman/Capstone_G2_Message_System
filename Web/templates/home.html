@@ -1,11 +1,25 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="home">
-    <h1>My Homepage</h1>
-    <p>This is a test website. {{myName}}</p>
-    <p><form action="{{ url_for('greet') }}" method='post'>
-        Please type your name: <input type='text' name='myName'><br>
-        <input type='submit' value='Submit'>
-        </form></p>
-</div>
+<section class="panel">
+  <h2>Login Page (Demo Only)</h2>
+  <p>
+    This is a placeholder login screen for the Milestone 3 video. It does not authenticate yet.
+    It only stores a display name in the session so you can show separate screens and a realistic flow.
+  </p>
+
+  <form method="post" class="form-grid compact-form">
+    <label for="display_name">Display Name</label>
+    <input id="display_name" name="display_name" type="text" placeholder="Group member name" required>
+    <button type="submit">Continue to Sender</button>
+  </form>
+</section>
+
+<section class="panel muted-panel">
+  <h3>Milestone 3 Demo Flow</h3>
+  <ol class="steps">
+    <li>Use the Sender page to create a message (local outbox only).</li>
+    <li>Run the standalone consumer script in terminal to save messages to SQLite.</li>
+    <li>Open Receiver / Sorter to show database rows, duplicates, sorting, and filters.</li>
+  </ol>
+</section>
 {% endblock %}
