@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Sender / Producer UI (Google Pub/Sub)</h2>
+  <p>
+    This page simulates the producer component. It publishes a JSON message directly to a 
+    Google Cloud Pub/Sub topic for Milestone 3.
+  </p>
+
+  <form method="post" class="form-grid">
+    <label for="message_content">Message Content</label>
+    <textarea id="message_content" name="message_content" rows="4" placeholder="Type the message payload content" required></textarea>
+
+    <label for="message_id">Message ID (optional, for duplicate demo)</label>
+    <input id="message_id" name="message_id" type="text" placeholder="Leave blank for auto-generated UUID">
+
+    <button type="submit">Publish Message to Pub/Sub</button>
+  </form>
+</section>
+
+<section class="two-col">
+  <div class="panel muted-panel">
+    <h3>How to Demo Duplicate Handling</h3>
+    <ol class="steps">
+      <li>Submit a message with a custom Message ID (example: <code>DEMO-001</code>).</li>
+      <li>Submit another message using the same Message ID.</li>
+      <li>Ensure your <strong>consumer_stub.py</strong> is running in your terminal.</li>
+      <li>Open Receiver / Viewer to see how the system flagged the duplicate in SQLite.</li>
+    </ol>
+  </div>
+
+  <div class="panel code-panel">
+    <h3>Latest Published Payload</h3>
+    {% if last_payload %}
+      <pre>{{ last_payload | tojson(indent=2) }}</pre>
+      
+      {# Fixed the crashing line by checking for pubsub_id #}
+      {% if pubsub_id %}
+        <p class="small-note">Pub/Sub Message ID: <code>{{ pubsub_id }}</code></p>
+      {% elif last_envelope %}
+        <p class="small-note">Envelope transport ID: <code>{{ last_envelope.transport_id }}</code></p>
+      {% endif %}
+      
+    {% else %}
+      <p>No message published in this session yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
