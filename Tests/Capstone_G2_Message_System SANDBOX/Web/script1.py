@@ -55,6 +55,11 @@ def logout():
     flash("Logged out.", "success")
     return redirect(url_for("login"))
 
+ # 2. Initialize Publisher and Path
+publisher = pubsub_v1.PublisherClient()
+topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
+
+
 @app.route("/sender", methods=["GET", "POST"])
 def sender():
     last_payload = None
@@ -78,9 +83,7 @@ def sender():
                 user_name=user_name,
             )
 
-            # 2. Initialize Publisher and Path
-            publisher = pubsub_v1.PublisherClient()
-            topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
+           
 
             # 3. Publish to Google Cloud
             data = json.dumps(payload).encode("utf-8")
