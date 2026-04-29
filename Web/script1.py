@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import json
 import sys
+import uuid
+import time
+from concurrent import futures
 from pathlib import Path
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from google.cloud import pubsub_v1
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -35,21 +38,33 @@ def inject_globals():
         "sort_options": storage.SORT_OPTIONS,
     }
 
+ROLE_ACCESS = {
+    "Publisher": ["sender"],
+    "Viewer":    ["viewer"],
+    "Admin":     ["sender", "viewer"],
+}
+
 @app.route("/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        display_name = (request.form.get("display_name") or "").strip()
-        if not display_name:
-            flash("Enter a display name to continue (demo login only).", "error")
-        else:
-            session["display_name"] = display_name
-            flash(f"Logged in as {display_name}.", "success")
-            return redirect(url_for("sender"))
+        role = request.form.get("role")
+        if role in ROLE_ACCESS:
+            session["display_name"] = role
+            session["role"] = role
+            if role == "Admin":
+                landing = "admin"
+            elif role == "Publisher":
+                landing = "sender"
+            else:
+                landing = "viewer"
+            flash(f"Logged in as {role}.", "success")
+            return redirect(url_for(landing))
+        flash("Invalid role selected.", "error")
 
     return render_template("home.html")
 
-@app.route("/logout", methods=["POST"])
+@app.route("/logout")
 def logout():
     session.clear()
     flash("Logged out.", "success")
@@ -62,6 +77,11 @@ topic_path = publisher.topic_path(PROJECT_ID, TOPIC_ID)
 
 @app.route("/sender", methods=["GET", "POST"])
 def sender():
+    role = session.get("role")
+    if role not in ("Publisher", "Admin"):
+        flash("Access denied. Publishers and Admins only.", "error")
+        return redirect(url_for("login"))
+
     last_payload = None
     pubsub_id = None
 
@@ -106,6 +126,11 @@ def sender():
 
 @app.route("/viewer")
 def viewer():
+    role = session.get("role")
+    if role not in ("Viewer", "Admin"):
+        flash("Access denied. Viewers and Admins only.", "error")
+        return redirect(url_for("login"))
+
     sort_key = request.args.get("sort", "received_desc")
     duplicate_filter = request.args.get("dup", "all")
     search = (request.args.get("search") or "").strip()
@@ -128,9 +153,59 @@ def viewer():
 def receiver_alias():
     return redirect(url_for("viewer"))
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+@app.route("/admin")
+def admin():
+    role = session.get("role")
+    if role != "Admin":
+        flash("Access denied. Admins only.", "error")
+        return redirect(url_for("login"))
+    return render_template("admin.html")
+
+NUM_LOAD_TEST_MESSAGES = 30
+
+@app.route("/run-load-test", methods=["POST"])
+def run_load_test():
+    role = session.get("role")
+    if role != "Admin":
+        return jsonify({"error": "Access denied"}), 403
+
+    log_lines = []
+    log_lines.append(f"Starting load test: Sending {NUM_LOAD_TEST_MESSAGES} messages...")
+    start_time = time.time()
+
+    publish_futures = []
+    results = {}
+
+    def get_callback(msg_num):
+        def callback(future):
+            try:
+                results[msg_num] = f"[{msg_num}] Published with ID: {future.result()}"
+            except Exception as e:
+                results[msg_num] = f"[{msg_num}] Failed to publish: {e}"
+        return callback
+
+    for i in range(1, NUM_LOAD_TEST_MESSAGES + 1):
+        payload = {
+            "message_id": str(uuid.uuid4()),
+            "content": f"Load test message number {i}",
+            "producer_name": "load-test-script",
+            "user_name": "Admin",
+            "timestamp": time.time(),
+        }
+        data = json.dumps(payload).encode("utf-8")
+        future = publisher.publish(topic_path, data)
+        future.add_done_callback(get_callback(i))
+        publish_futures.append(future)
+
+    futures.wait(publish_futures, return_when=futures.ALL_COMPLETED)
+
+    for i in range(1, NUM_LOAD_TEST_MESSAGES + 1):
+        log_lines.append(results.get(i, f"[{i}] No result"))
+
+    elapsed = time.time() - start_time
+    log_lines.append(f"\nFinished! Sent {NUM_LOAD_TEST_MESSAGES} messages in {elapsed:.2f} seconds.")
+
+    return jsonify({"output": "\n".join(log_lines)})
 
 if __name__ == "__main__":
     app.run(debug=True)

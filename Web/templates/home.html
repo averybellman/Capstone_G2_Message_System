@@ -1,25 +1,22 @@
 {% extends "layout.html" %}
 {% block content %}
 <section class="panel">
-  <h2>Login Page (Demo Only)</h2>
-  <p>
-    This is a placeholder login screen for the Milestone 3 video. It does not authenticate yet.
-    It only stores a display name in the session so you can show separate screens and a realistic flow.
-  </p>
+  <h2>Login</h2>
+  <p>Select a role to log in:</p>
 
-  <form method="post" class="form-grid compact-form">
-    <label for="display_name">Display Name</label>
-    <input id="display_name" name="display_name" type="text" placeholder="Group member name" required>
-    <button type="submit">Continue to Sender</button>
-  </form>
-</section>
-
-<section class="panel muted-panel">
-  <h3>Milestone 3 Demo Flow</h3>
-  <ol class="steps">
-    <li>Use the Sender page to create a message (local outbox only).</li>
-    <li>Run the standalone consumer script in terminal to save messages to SQLite.</li>
-    <li>Open Receiver / Sorter to show database rows, duplicates, sorting, and filters.</li>
-  </ol>
+  <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+    <form method="post">
+      <input type="hidden" name="role" value="Publisher">
+      <button type="submit">Login as Publisher</button>
+    </form>
+    <form method="post">
+      <input type="hidden" name="role" value="Viewer">
+      <button type="submit">Login as Viewer</button>
+    </form>
+    <form method="post">
+      <input type="hidden" name="role" value="Admin">
+      <button type="submit">Login as Admin</button>
+    </form>
+  </div>
 </section>
 {% endblock %}

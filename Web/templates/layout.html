@@ -11,14 +11,24 @@
       <div class="container header-row">
         <div>
           <p class="eyebrow">IS Capstone Project 1</p>
-          <h1 class="brand">Cloud Messaging Provider (Milestone 3 Shell)</h1>
+          <h1 class="brand">Cloud Messaging Provider</h1>
         </div>
         <nav>
           <ul class="menu">
+            {% if session.get('role') %}
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            {% else %}
             <li><a href="{{ url_for('login') }}">Login</a></li>
+            {% endif %}
+            {% if session.get('role') in ('Publisher', 'Admin') %}
             <li><a href="{{ url_for('sender') }}">Sender</a></li>
+            {% endif %}
+            {% if session.get('role') in ('Viewer', 'Admin') %}
             <li><a href="{{ url_for('viewer') }}">Receiver / Sorter</a></li>
-            <li><a href="{{ url_for('about') }}">About Project</a></li>
+            {% endif %}
+            {% if session.get('role') == 'Admin' %}
+            <li><a href="{{ url_for('admin') }}">Admin</a></li>
+            {% endif %}
           </ul>
         </nav>
       </div>
@@ -28,9 +38,8 @@
       <section class="status-bar">
         <div>
           <strong>User:</strong>
-          {{ session.get('display_name', 'Not logged in (demo mode)') }}
+          {{ session.get('display_name', 'Not logged in') }}
         </div>
-        <div><strong>Outbox:</strong> {{ nav_summary.outbox_count }} queued</div>
         <div><strong>DB:</strong> {{ nav_summary.db_total }} rows</div>
         <div><strong>Duplicates:</strong> {{ nav_summary.db_duplicates }}</div>
       </section>

@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Sender / Producer UI (Local Stub)</h2>
+  <p>
+    This page simulates the producer component. For Milestone 3 it writes a JSON message to a local outbox file.
+    Later, this same form handler can publish to Google Pub/Sub.
+  </p>
+
+  <form method="post" class="form-grid">
+    <label for="message_content">Message Content</label>
+    <textarea id="message_content" name="message_content" rows="4" placeholder="Type the message payload content" required></textarea>
+
+    <label for="message_id">Message ID (optional, for duplicate demo)</label>
+    <input id="message_id" name="message_id" type="text" placeholder="Leave blank for auto-generated UUID">
+
+    <button type="submit">Queue Message to Local Outbox</button>
+  </form>
+</section>
+
+<section class="two-col">
+  <div class="panel muted-panel">
+    <h3>How to Demo Duplicate Handling</h3>
+    <ol class="steps">
+      <li>Submit a message with a custom Message ID (example: <code>DEMO-001</code>).</li>
+      <li>Submit another message using the same Message ID.</li>
+      <li>Run the consumer stub in terminal.</li>
+      <li>Open Receiver / Sorter and filter duplicates.</li>
+    </ol>
+  </div>
+
+  <div class="panel code-panel">
+    <h3>Latest Queued Payload</h3>
+    {% if last_payload %}
+      <pre>{{ last_payload | tojson(indent=2) }}</pre>
+      <p class="small-note">Envelope transport ID: <code>{{ last_envelope.transport_id }}</code></p>
+    {% else %}
+      <p>No message queued in this request yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

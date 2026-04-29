@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Admin Panel</h2>
+  <p>
+    The Admin Panel is designed to give you access to all parts of the website to test its functionality without having to log in with each user account.
+     
+  </p>
+  <p>
+   The load test will quickly send 30 messages to stress test the system’s latency and message processing speed. 
+  </p>
+</section>
+
+<section class="two-col">
+  <div class="panel muted-panel">
+    <h3>Load Test</h3>
+    <button id="run-load-test-btn" type="button" onclick="runLoadTest()">Run Load Test</button>
+  </div>
+
+  <div class="panel muted-panel" style="display:flex;flex-direction:column;">
+    <h3>Load Test Output</h3>
+    <textarea id="load-test-output" readonly
+      style="flex:1;width:100%;min-height:200px;box-sizing:border-box;resize:vertical;font-family:monospace;font-size:0.85rem;padding:0.5rem;"
+      placeholder="Click 'Run Load Test' to see output here..."></textarea>
+  </div>
+</section>
+
+<script>
+function runLoadTest() {
+  const btn = document.getElementById('run-load-test-btn');
+  const output = document.getElementById('load-test-output');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  output.value = 'Starting load test...\n';
+
+  fetch('{{ url_for("run_load_test") }}', { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      output.value = data.output || data.error || 'No output.';
+    })
+    .catch(err => {
+      output.value = 'Error: ' + err;
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = 'Run Load Test';
+    });
+}
+</script>
+{% endblock %}
