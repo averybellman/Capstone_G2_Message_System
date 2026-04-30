@@ -1,1 +1,0 @@
-PS C:\Users\avery\Documents\GitHub\Capstone_G2_Message_System\Web> py .\script1.py
