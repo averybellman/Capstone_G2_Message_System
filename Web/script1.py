@@ -1,8 +1,8 @@
-"""Flask demo for the capstone cloud messaging project with Google Pub/Sub.
+"""Flask website for the capstone cloud messaging project with Google Pub/Sub.
 
-This version uses Google Cloud Pub/Sub for Milestone 3:
+
 - Sender UI publishes payloads to a Pub/Sub topic
-- Viewer UI reads from SQLite (populated by your separate consumer script)
+- Viewer UI reads from SQLite
 """
 
 from __future__ import annotations
